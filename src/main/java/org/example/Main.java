@@ -16,7 +16,36 @@ public class Main {
         final String inputFilePath = args[1];
         final String outputFilePath = args[2];
 
+        File testFile = new File(inputFilePath);
+        if (!testFile.exists() || testFile.isDirectory()) {
+            System.err.println("Файл с входными данными не существует или это директория");
+            return;
+        }
 
+        testFile = new File(outputFilePath);
+        if (!testFile.exists() || testFile.isDirectory()) {
+            System.err.println("Файл с выходными данными не существует или это директория");
+            return;
+        }
+
+        JSON json = new JSON();
+        JSONObject readResult = json.readInputJson(inputFilePath, operationType);
+
+        if (readResult.get("type") == "error") {
+            json.writeOutputJson(outputFilePath, readResult);
+        } else {
+            Postgre postgre = new Postgre();
+            JSONObject outputResult = null;
+            switch (operationType) {
+                case "search": outputResult = postgre.getOutputForSearch(readResult); break;
+                case "stat": outputResult = postgre.getOutputForStat(readResult); break;
+                default: {
+                    outputResult.put("type", "error");
+                    outputResult.put("message", "Неизвестная ошибка");
+                }
+            }
+            json.writeOutputJson(outputFilePath, outputResult);
+        }
 
     }
 
