@@ -21,7 +21,42 @@ public class JSON {
     private final HashSet<String> numericCriterias = new HashSet<String>(
             Arrays.asList("minTimes", "minExpenses", "maxExpenses", "badCustomers")
     );
+    public JSONObject readInputJson(String inputFilePath, String operationType) {
+        File file = new File(inputFilePath);
+        JSONObject resultJsonObject = null;
+        JSONParser parser = new JSONParser();
 
+        try(FileReader reader = new FileReader(file)) {
+            JSONObject inputCriterias = (JSONObject) parser.parse(reader);
+            JSONArray criterias = (JSONArray) inputCriterias.get("criterias");
+            String formatCheckingMessage;
+
+            switch (operationType) {
+                case "search": formatCheckingMessage = checkCriteriasSearchFormat(criterias); break;
+                case "stat": formatCheckingMessage = checkCriteriasStatFormat(inputCriterias); break;
+                default: formatCheckingMessage = null;
+            }
+
+
+            if (formatCheckingMessage != null) {
+                resultJsonObject = new JSONObject();
+                resultJsonObject.put("type", "error");
+                resultJsonObject.put("message", formatCheckingMessage);
+
+            } else {
+                resultJsonObject = inputCriterias;
+            }
+
+        } catch (IOException | ParseException e) {
+            System.err.println(e);
+            JSONObject errorObject = new JSONObject();
+            errorObject.put("type", "error");
+            errorObject.put("message", e.getMessage());
+            return errorObject;
+        }
+
+        return resultJsonObject;
+    }
 
     private String checkCriteriasStatFormat(JSONObject inputCriterias) {
         if (inputCriterias == null) {
